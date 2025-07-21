@@ -13,11 +13,10 @@ console.log("MONGODB_URI from .env:", process.env.MONGODB_URI);
 connectDB()
 .then(()=>{
     try {
-            // Your app.on('error') is here, which might be a design choice,
-            // but syntactically it's within the then block.
+            
             app.on('error', (error) => {
                 console.log('Error', error);
-                throw error; // This throw will likely crash the process if uncaught higher up
+                throw error; 
             });
 
             // The 'app' object in app.listen doesn't directly return a promise
