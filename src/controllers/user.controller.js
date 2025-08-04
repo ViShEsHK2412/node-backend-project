@@ -1,7 +1,7 @@
 import {asyncHandler} from '../utils/asyncHandler.js'
 import {ApiError} from '../utils/apiError.js'
 import{User} from '../models/user.model.js'
-import { cloudinaryFileUpload } from '../utils/cloudinary.js'
+import { cloudinaryFileDelete, cloudinaryFileUpload } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/apiResponse.js'
 import jwt from "jsonwebtoken"
 
@@ -236,7 +236,7 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
     if(!fullname || !email){
         throw new ApiError(400 , "All Fields are Required")
     }
-    const user =User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set : {
@@ -244,8 +244,13 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
                 email
             }
         },
-        {new : true}//update hone k baad jo information h vo return hoti h humko
+        {new : true}
+        
+        
+        //update hone k baad jo information h vo return hoti h humko
     ).select("-password")
+
+    
 
     return res
     .status(200)
@@ -259,6 +264,12 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar File is Missing")
     }
+    const oldUser  = User.findById(req.user?._id)
+
+    if(!AvatarUrlFind){
+        throw new ApiError(400,"User Id Not Found")
+    }
+    const oldAvatarUrl  = oldUser.avatar
 
     const avatar = await cloudinaryFileUpload(avatarLocalPath)
 
@@ -266,7 +277,6 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Error while Uploading on avatar")
 
     }
-
     const user =  await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -276,6 +286,18 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
         },
         {new : true}
     ).select("-password")
+
+    if(oldAvatarUrl){
+        const urlParts = oldAvatarUrl.split("/")
+        const publicIdWithextension = urlParts[urlParts.length - 1]
+        const PublicId = publicIdWithextension.split(".")[0]
+
+        await cloudinaryFileDelete(PublicId)
+    }
+
+    
+
+    
 
      return res
     .status(200)
